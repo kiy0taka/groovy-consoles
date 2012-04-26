@@ -10,8 +10,8 @@ import groovy.transform.*
 
 def templates = [
 'group': '''\
-    |def dbName = 'test'
-    |def colName = 'test'
+    |def (dbName, colName) = ['test', 'test']
+    |def db = mongo.getDB(dbName)
     |def key = [:]
     |def cond = [:]
     |def initial = [:]
@@ -19,13 +19,13 @@ def templates = [
     |function(obj, prev) {
     |
     |}\'''
-    |def db = mongo.getDB(dbName)
+    |
     |db[colName].group(key, cond, initial, reduce)'''.stripMargin(),
 'mapReduce': '''\
     |import static com.mongodb.MapReduceCommand.OutputType.*
     |
-    |def dbName = 'test'
-    |def colName = 'test'
+    |def (dbName, colName) = ['test', 'test']
+    |def db = mongo.getDB(dbName)
     |def map = \'''
     |function() {
     |    emit(this._id, 1)
@@ -42,7 +42,7 @@ def templates = [
     |def outputTarget = 'my_output'
     |def outputType = REPLACE
     |def query = [:]
-    |def db = mongo.getDB(dbName)
+    |
     |db[colName].mapReduce(map, reduce, outputTarget, outputType, query)
     |db[outputTarget].find()'''.stripMargin()
 ]
