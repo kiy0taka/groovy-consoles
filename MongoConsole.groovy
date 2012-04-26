@@ -47,6 +47,8 @@ def templates = [
     |db[outputTarget].find()'''.stripMargin()
 ]
 
+def browse = java.awt.Desktop.desktop.&browse
+
 def mongoMenu = {
     menu('Mongo') {
         menu('Templates') {
@@ -60,6 +62,10 @@ def mongoMenu = {
                     menuItem file.name - ~/\.groovy$/, actionPerformed: { inputEditor.textEditor.text = file.text }
                 }
             }
+        }
+        menu('Documents') {
+            menuItem 'MongoDB Manual', actionPerformed: { browse 'http://www.mongodb.org/display/DOCS/Manual'.toURI() }
+            menuItem 'Java Driver API', actionPerformed: { browse 'http://api.mongodb.org/java/current/'.toURI() }
         }
     }
 }
