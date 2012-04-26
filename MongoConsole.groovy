@@ -1,4 +1,4 @@
-@Grab('com.gmongo:gmongo:0.9.5')
+@Grab('com.gmongo:gmongo:latest.release')
 @GrabConfig(systemClassLoader=true)
 import com.gmongo.GMongo
 import com.mongodb.*
