@@ -4,13 +4,42 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.*
 
-def transformations = [ThreadInterrupt, Canonical]
+class Model {
+    List transformations = []
+}
 
-Console.metaClass.newScript = { ClassLoader parent, Binding binding ->
-    def config = new CompilerConfiguration()
-    config.addCompilationCustomizers(*transformations.collect{new ASTTransformationCustomizer(it)})
-    delegate.shell = new GroovyShell(parent, binding, config)
+def model = new Model()
+
+def astTransformations = [AutoClone, AutoExternalize, Canonical, EqualsAndHashCode,
+    Immutable, InheritConstructors, ToString, TupleConstructor]
+
+def menu = {
+    menu 'Customizers', {
+        menu 'AST Transformation', {
+            astTransformations.each { atf ->
+                checkBoxMenuItem atf.simpleName, itemStateChanged: { e ->
+                    if (e.source.selected) {
+                        model.transformations << atf
+                    } else {
+                        model.transformations.remove atf
+                    }
+                }
+            }
+        }
+    }
 }
 
 UIManager.lookAndFeel = UIManager.systemLookAndFeelClassName
-new Console(Console.class.classLoader.getRootLoader()).run()
+
+def console = new Console(Console.class.classLoader.getRootLoader())
+def beforeExecution = {
+    delegate.config.addCompilationCustomizers(*(model.transformations.collect{new ASTTransformationCustomizer(it)}))
+}
+beforeExecution.delegate = console
+console.beforeExecution = beforeExecution
+console.run(
+    Console.frameConsoleDelegates << [menuBarDelegate: {arg->
+        current.JMenuBar = build(arg)
+        current.JMenuBar.add(build(menu))
+    }
+])
