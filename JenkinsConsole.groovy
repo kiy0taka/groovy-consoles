@@ -61,6 +61,16 @@ def jenkinsMenu = {
         menuItem('Run Configuration', actionPerformed:{
             showDialog('Run Configuration', configPanel, {})
         })
+        separator()
+        menu('Templates') {
+            def templateDir = new File(System.getProperty('user.home')+'/.jenkinsconsole')
+            if (templateDir.exists()) {
+                separator()
+                templateDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.groovy/) { file ->
+                    menuItem file.name - ~/\.groovy$/, actionPerformed: { inputEditor.textEditor.text = file.text }
+                }
+            }
+        }
     }
 }
 
