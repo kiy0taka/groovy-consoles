@@ -85,7 +85,11 @@ Console.metaClass.newScript = { ClassLoader parent, Binding binding ->
             def connection
             try {
                 connection = connector.connect()
-                connection.newBuild().forTasks(tasks).run()
+                def launcher = connection.newBuild().forTasks(tasks)
+                if (console.scriptFile.name != 'build.gradle') {
+                    launcher.withArguments('-b', console.scriptFile.name)
+                }
+                launcher.run()
             } catch (BuildException ignore) {
                 // NOP
             } finally {
