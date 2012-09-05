@@ -1,5 +1,5 @@
 @GrabResolver('http://repo.gradle.org/gradle/libs/')
-@Grab('org.gradle:gradle-tooling-api:1.0')
+@Grab('org.gradle:gradle-tooling-api:1.1')
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProgressListener
