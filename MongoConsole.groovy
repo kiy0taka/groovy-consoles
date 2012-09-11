@@ -70,17 +70,9 @@ def mongoMenu = {
     }
 }
 
-Console.metaClass.newScript = { ClassLoader parent, Binding binding ->
-    def config = new CompilerConfiguration()
-    def importCustomizer = new ImportCustomizer()
-    importCustomizer.addImports('com.gmongo.GMongo')
-    config.addCompilationCustomizers(importCustomizer)
-    binding.mongo = new GMongo()
-    delegate.shell = new GroovyShell(parent, binding, config)
-}
-
 UIManager.lookAndFeel = UIManager.systemLookAndFeelClassName
-new Console(Console.class.classLoader.getRootLoader()).run(
+
+new Console(Console.class.classLoader.getRootLoader(), new Binding(mongo:new GMongo())).run(
     Console.frameConsoleDelegates << [menuBarDelegate: {arg->
         current.JMenuBar = build(arg)
         current.JMenuBar.add(build(mongoMenu))
