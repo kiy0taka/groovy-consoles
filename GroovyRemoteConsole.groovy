@@ -4,48 +4,14 @@ import groovyx.remote.client.*
 import javax.swing.UIManager
 import groovy.ui.Console
 import org.codehaus.groovy.control.*
-import groovy.lang.GroovyClassLoader.InnerLoader
 import groovy.beans.Bindable
 import java.security.*
 import org.codehaus.groovy.ast.ClassNode
 import javax.swing.JOptionPane
 
 class AppRemoteControl extends RemoteControl {
-    public AppRemoteControl(Transport transport, BytesCashedGroovyClassLoader classLoader) {
-        super(transport, new RemoteCommandGenerator(classLoader));
-    }
-}
-
-class RemoteCommandGenerator extends CommandGenerator {
-
-    def cl
-
-    public RemoteCommandGenerator(cl) {
-        super(cl);
-        this.cl = cl
-    }
-
-    protected byte[] getClassBytes(@SuppressWarnings("rawtypes") Class closureClass) {
-        def classBytes = cl.classCollector.cache[closureClass.getName()]
-        if (classBytes == null) {
-            throw new IllegalStateException("Could not find class file for class [" + closureClass.getName() +"]");
-        }
-        classBytes
-    }
-}
-
-class BytesCashedGroovyClassLoader extends GroovyClassLoader {
-
-    def classCollector;
-
-    protected GroovyClassLoader.ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
-        def self = this
-        InnerLoader loader = AccessController.doPrivileged(new PrivilegedAction<InnerLoader>() {
-            public InnerLoader run() {
-                return new InnerLoader(self);
-            }
-        })
-        this.classCollector = new BytesCachedClassCollector(loader, unit, su);
+    public AppRemoteControl(Transport transport, BytesCachedGroovyClassLoader classLoader) {
+        super(transport, new RemoteCommandGenerator(classLoader))
     }
 }
 
@@ -53,14 +19,54 @@ class BytesCachedClassCollector extends GroovyClassLoader.ClassCollector {
 
     def cache = [:]
 
-    protected BytesCachedClassCollector(InnerLoader cl, CompilationUnit unit, SourceUnit su) {
-        super(cl, unit, su);
+    protected BytesCachedClassCollector(GroovyClassLoader.InnerLoader cl, CompilationUnit unit, SourceUnit su) {
+        super(cl, unit, su)
     }
 
     @Override
     protected Class createClass(byte[] code, ClassNode classNode) {
-        cache[classNode.getName()] = code
-        super.createClass(code, classNode);
+        cache[classNode.name] = code
+        return super.createClass(code, classNode)
+    }
+}
+
+class BytesCachedGroovyClassLoader extends GroovyClassLoader {
+
+    def classCollector;
+
+    protected GroovyClassLoader.ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
+        GroovyClassLoader.InnerLoader loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader.InnerLoader>() {
+            public GroovyClassLoader.InnerLoader run() {
+                return new GroovyClassLoader.InnerLoader(BytesCachedGroovyClassLoader.this)
+            }
+        });
+        classCollector = new BytesCachedClassCollector(loader, unit, su)
+    }
+}
+
+class RemoteCommandGenerator extends CommandGenerator {
+
+    public RemoteCommandGenerator(BytesCachedGroovyClassLoader cl) {
+        super(cl)
+    }
+
+    protected byte[] getClassBytes(Class closureClass) {
+        def classBytes = classLoader.classCollector.cache[closureClass.name]
+        if (classBytes == null) {
+            throw new IllegalStateException("Could not find class file for class [${closureClass.name}]");
+        }
+        classBytes
+    }
+
+    @Override
+    protected List<byte[]> getSupportingClassesBytes(Class closureClass) {
+        def className = closureClass.name
+        classLoader.classCollector.cache.inject([]) { classes, entry ->
+            if (entry.key != className && entry.key.startsWith(className)) {
+                classes << entry.value
+            }
+            classes
+        }
     }
 }
 
@@ -87,7 +93,7 @@ def remoteMenu = {
 Console.metaClass.newScript = { ClassLoader parent, Binding binding ->
     delegate.shell = new GroovyShell(parent, binding)
     delegate.shell.metaClass.run = { String scriptText, String fileName, List list ->
-        def cl = new BytesCashedGroovyClassLoader()
+        def cl = new BytesCachedGroovyClassLoader()
         binding.remote = new AppRemoteControl(new HttpTransport(model.remoteUrl), cl)
         Script s = (Script) cl.parseClass(scriptText).newInstance()
         s.binding = binding
