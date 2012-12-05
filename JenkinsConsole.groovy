@@ -1,5 +1,5 @@
 @GrabResolver('http://repo.jenkins-ci.org/public')
-@Grab('org.jenkins-ci.main:cli:1.459')
+@Grab('org.jenkins-ci.main:cli:1.484')
 import hudson.cli.CLI
 import javax.swing.*
 import groovy.beans.Bindable
@@ -63,9 +63,8 @@ def jenkinsMenu = {
         })
         separator()
         menu('Templates') {
-            def templateDir = new File(System.getProperty('user.home')+'/.jenkinsconsole')
+            def templateDir = new File(System.getProperty('user.home')+'/.groovy-consoles/jenkins')
             if (templateDir.exists()) {
-                separator()
                 templateDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.groovy/) { file ->
                     menuItem file.name - ~/\.groovy$/, actionPerformed: { inputEditor.textEditor.text = file.text }
                 }

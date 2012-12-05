@@ -55,7 +55,7 @@ def mongoMenu = {
             templates.each { name, template ->
                 menuItem name, actionPerformed: { inputEditor.textEditor.text = template }
             }
-            def templateDir = new File(System.getProperty('user.home')+'/.mongo')
+            def templateDir = new File(System.getProperty('user.home')+'/.groovy-consoles/mongo')
             if (templateDir.exists()) {
                 separator()
                 templateDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.groovy/) { file ->

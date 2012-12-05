@@ -42,7 +42,7 @@ def gradleMenu = {
             templates.each { name, template ->
                 menuItem name, actionPerformed: { inputEditor.textEditor.text = template }
             }
-            def templateDir = new File(System.getProperty('user.home')+'/.gradle/templates')
+            def templateDir = new File(System.getProperty('user.home')+'/.groovy-consoles/gradle')
             if (templateDir.exists()) {
                 separator()
                 templateDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.gradle/) { file ->
